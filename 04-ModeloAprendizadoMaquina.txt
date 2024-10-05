@@ -1,0 +1,28 @@
+####Ingestao Dados Hive######
+
+1- Após a criação do database e das tabelas, foi a vez de inserir os dados dos arquivos csv armazenados no bucket
+
+2- Foi necessário mover os arquivos csv para o HDFS
+
+###Criacao do arquivo 
+>hadoop fs -mkdir -p /user/hive/warehouse/projeto.db/auxilio_emergencial;
+>hadoop fs -mkdir -p /user/hive/warehouse/projeto.db/municipio;
+
+##Migrar o arquivo para o HDFS
+>hadoop fs -copyFromLocal /home/yurigafeital/arquivos-curso/datasets/auxilio_emergencial_no_header.csv /user/hive/warehouse/projeto.db/auxilio_emergencial/
+>hadoop fs -copyFromLocal /home/yurigafeital/arquivos-curso/datasets/municipio_no_header.csv /user/hive/warehouse/projeto.db/municipio/
+
+3- Com os arquivos e tabelas em ordem, inseri os dados dos csvs nas tabelas
+
+>beeline -u jdbc:hive2://localhost:10000/default -n yurigafeital@cluster-5472-m -d org.apache.hive.jdbc.HiveDriver;
+>USE projeto;
+>LOAD DATA INPATH '/user/hive/warehouse/projeto.db/auxilio_emergencial/auxilio_emergencial_no_header.csv' INTO TABLE auxilio_emergencial;
+>LOAD DATA INPATH '/user/hive/warehouse/projeto.db/municipio/municipio_no_header.csv' INTO TABLE municipio;
+
+###describe utilizado no 02- PrimeirosPassos
+>describe auxilio_emergencial;
+>describe municipio;
+
+##Verificar os dados
+>select * from auxilio_emergencial limit 10;
+>select * from municipio limit 10;

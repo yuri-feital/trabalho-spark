@@ -1,0 +1,91 @@
+- Tema do projeto anterior de haddop: 
+
+Auxilio emergencial
+
+- Fontes de dados:
+
+Site https://brasil.io/dataset/govbr/files/  -> Auxilio Emergencial
+auxilio_emergencial.csv -> 29,3 GB
+(Por ser grande não consegui add no git)
+
+
+Site https://www.ibge.gov.br/estatisticas/sociais/trabalho/22827-censo-demografico-2022.html?edicao=35938-> População dos municipios
+POP2022_Municipios_20230622 -> 186 KB
+
+- Perguntas analíticas a serem respondidas agora em Pyspark com os dados:
+
+1- Qual é o total de auxílio emergencial distribuído em cada uf? (Valor total x Uf)
+
+2- Qual a total de população por UF? (UF x Qtd pessoa)
+
+3- Valor médio do auxilio por pessoa em cada uf? (Valor total/Total poupulacao x Uf)
+
+4- Quantidade de vezes recebido o auxilio por uf? (Parcela x uf)
+
+5- Quais os nomes que mais se repetem que receberam auxilio? (Qtd nome)
+
+- Perguntas Extras:
+
+6- Beneficiários com maior quantidade de valor recebido (Pessoa x valor)
+
+7- Quantidade de auxilio distribuido por mês (ano_mes x qtd_parcela)
+
+
+- Dataset:
+
+Foi realizado o comando describe após a inserção dos dados 
+
+###Tabela  Municipio
++----------------+------------+----------+
+|    col_name    | data_type  | comment  |
++----------------+------------+----------+
+| uf             | string     |          |
+| cod_uf         | int        |          |
+| cod_municipio  | string     |          |
+| municipio      | string     |          |
+| qtd_populacao  | float      |          |
++----------------+------------+----------+
+
+Sendo:
+uf - Sigla do estado
+cod_uf - Codigo do estado 
+cod_municipio - Codigo do municipio 
+municipio - Nome da cidade / municipio 
+qtd_populacao - Quantidade de pessoas morando no municipio
+
+
+###Tabela  Auxilio Emergencial
++------------------------+------------+----------+
+|        col_name        | data_type  | comment  |
++------------------------+------------+----------+
+| ano_mes                | int        |          |
+| uf                     | string     |          |
+| codigo_ibge_municipio  | string     |          |
+| municipio              | string     |          |
+| nis                    | string     |          |
+| cpf                    | string     |          |
+| beneficiario           | string     |          |
+| nis_responsavel        | string     |          |
+| cpf_responsavel        | string     |          |
+| responsavel            | string     |          |
+| enquadramento          | string     |          |
+| parcela                | int        |          |
+| observacao             | string     |          |
+| valor                  | float      |          |
++------------------------+------------+----------+
+
+Sendo:
+ano_mes - Ano / mes referente ao auxlio recebido 
+uf - Sigla do estado
+codigo_ibge_municipio - Codigo do municipio segundo IBGE
+municipio - Nome da cidade / municipio
+nis - numero de identificacao social
+cpf - cpf 
+beneficiario - nome
+nis_responsavel - numero de identificacao social do responsavel
+cpf_responsavel - cpf do responsavel
+responsavel - nome do responsavel
+enquadramento - Motivo do auxilio
+parcela - Quantidade de parcelas recebidas
+observacao - observacao
+valor - Valor da parcela

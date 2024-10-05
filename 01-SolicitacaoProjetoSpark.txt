@@ -1,0 +1,19 @@
+1 - Desenvolva um notebook bem documentado em Python utilizando a biblioteca PySpark para apresentar as análises realizadas no trabalho do Hadoop
+
+Para cada análise realizada, escreva a consulta em SQL no Spark e também utilize as funções vistas em aula 
+Acrescente novas análises para uma análise exploratória mais detalhada
+Utilize funções de agregação (count, min, max, avg, sum, etc.)
+2 - Desenvolva um notebook bem documentado em Python utilizando a biblioteca PySpark para treinar um modelo de aprendizado de máquina
+
+Contextualize bem o problema e os dados disponíveis, assim como o algoritmo ou técnica que será utilizada (regressão linear, regressão logística, clusterização, etc.) 
+Mostre o tratamento realizado no dataframe
+Divida os dados em dois conjuntos diferentes: um de treinamento e outro de teste
+Treine um modelo e apresente métricas de desempenho do modelo gerado
+Aplique o modelo na base de teste e compare o desempenho com a base de treinamento
+Proponha sugestões para melhorar a qualidade do modelo e, se for possível, teste se essas sugestões melhoram o primeiro resultado obtido
+3 - Escolha o trabalho de aprendizado de máquina de um colega, faça uma cópia para o seu ambiente e faça uma revisão propondo análises ou melhorias que podem ser aplicadas no trabalho do colega. Você precisa agregar algo além do que foi entregue pelo colega
+
+Todos os notebooks devem ser compartilhados em um link público (Github, Google Colab ou Kaggle) e o item 3 deve ser encaminhado para o seu colega.
+
+
+Assim que terminar, salve o seu link público em um arquivo PDF e poste no Moodle. Utilize o seu nome para nomear o arquivo, identificando também a disciplina no seguinte formato: “nomedoaluno_nomedadisciplina_pd.PDF”.

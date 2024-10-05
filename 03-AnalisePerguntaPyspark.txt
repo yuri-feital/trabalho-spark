@@ -1,0 +1,170 @@
+### Projeto feito no google colab ###
+
+#Importando arquivo do Drive
+
+from google.colab import drive
+drive.mount('/content/drive')
+
+#Acessar pasta do Drive 
+
+import os
+os.chdir("/content/drive/MyDrive/MIT_Infnet/Aula_Hadoop/Projeto")
+
+#Configuração do ambiente PySpark
+
+!pip install pyspark
+
+# Inicializar a sessão Spark
+
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .appName("Auxilio Emergencial") \
+    .master("local") \
+    .getOrCreate()
+
+# Verificar o nome da aplicação
+
+print(spark.sparkContext.appName)
+
+# Carregar os dados
+
+municipio_df = spark.read.csv("POP2022_Municipios_20230622.csv",sep=';', header=True, inferSchema=True)
+auxilio_df = spark.read.csv("auxilio_emergencial.csv",sep=';', header=True, inferSchema=True)
+joined_df = auxilio_df.join(municipio_df, auxilio_df["uf"] == municipio_df["uf"])
+
+# Verificar carregamento
+
+municipio_df.show(5)
+auxilio_df.show(5)
+
+# Converter os DataFrames em RDDs 
+
+municipio_rdd = municipio_df.rdd
+auxilio_rdd = auxilio_df.rdd
+
+# Mostrar as primeiras linhas do RDD
+
+municipio_rdd.take(5)
+auxilio_rdd.take(5)
+
+# Responder às perguntas usando PySpark
+
+1- Qual é o total de auxílio emergencial distribuído em cada município? (Valor total x UF)
+
+
+auxilio_por_uf = auxilio_df.groupBy("uf").agg({"valor": "sum"}).withColumnRenamed("sum(valor)", "total_auxilio")
+
+auxilio_por_uf.show(n=auxilio_por_uf.count(), truncate=False)
+
+
+2- Qual a total de população por UF? (UF x Qtd pessoa)
+
+
+populacao_por_uf = municipio_df.groupBy("uf").agg({" POPULAÇÃO ": "sum"}).withColumnRenamed("sum( POPULAÇÃO )", "total_pessoa")
+
+populacao_por_uf.show(n=populacao_por_uf.count(), truncate=False)
+
++---+------------------+
+|uf |total_pessoa      |
++---+------------------+
+|SC |7762.1539999999995|
+|RO |1616.3790000000004|
+|PI |3270.173999999999 |
+|AM |1897.531          |
+|RR |634.805           |
+|GO |6462.566000000001 |
+|TO |1584.3060000000003|
+|MT |4781.240999999998 |
+|SP |32147.36100000001 |
+|PB |4030.9610000000016|
+|ES |3975.1            |
+|RS |9683.796          |
+|MS |2833.7419999999993|
+|AL |3125.2539999999995|
+|MG |19175.14599999998 |
+|PA |7075.626000000004 |
+|BA |12048.036000000006|
+|SE |2211.867999999999 |
+|PE |7556.527          |
+|CE |6340.273999999999 |
+|RN |3303.9530000000013|
+|RJ |9989.677          |
+|MA |5739.231000000001 |
+|AC |829.7800000000001 |
+|DF |NULL              |
+|PR |9963.589999999995 |
+|AP |774.268           |
++---+------------------+
+
+
+3- Valor médio do auxilio por pessoa em cada uf? (Valor total/Total poupulacao x Uf)
+
+
+medio_pessoa_uf = joined_df.groupBy("a.uf", "m.qtd_populacao") \ .agg((F.sum("a.valor") / F.col("m.qtd_populacao")).alias("valor_medio_por_pessoa"))
+
+medio_pessoa_uf.show(n=medio_pessoa_uf.count(), truncate=False)
+
+
+4- Quantidade de vezes recebido o auxilio por uf? (Parcela x Uf)
+
+
+qtd_auxilio_uf = auxilio_df.groupBy("uf") \ .agg(F.count("parcela").alias("total_parcelas"))
+
+qtd_auxilio_uf.show(n=qtd_auxilio_uf.count(), truncate=False)
+
+
+5- Quais os nomes que mais se repetem que receberam auxilio? (Qtd nome)
+
+
+mes_repetido = auxilio_df.groupBy("beneficiario") \
+    .agg(F.count("*").alias("qtd_nome")) \
+    .orderBy(F.col("qtd_nome").desc()) \
+    .limit(10)
+
+mes_repetido.show(n=mes_repetido.count(), truncate=False)
+
+
+# Perguntas Extras
+
+
+6- Beneficiários com maior quantidade de valor recebido (Pessoa x valor)
+
+SELECT 
+    beneficiario,
+    SUM(valor) AS total_valor_recebido
+FROM 
+    auxilio_emergencial
+GROUP BY 
+    beneficiario
+ORDER BY 
+    total_valor_recebido DESC
+LIMIT 10;
+
+beneficiarios_valor_df = auxilio_emergencial.groupBy("beneficiario") \
+    .agg(F.sum("valor").alias("total_valor_recebido")) \
+    .orderBy(F.col("total_valor_recebido").desc()) \
+    .limit(10)
+
+beneficiarios_valor_df.show(n=beneficiarios_valor_df.count(), truncate=False)
+
+
+7- Quantidade de auxilio distribuido por mês (ano_mes x qtd_parcela)
+
+SELECT 
+    ano_mes,
+    COUNT(parcela) AS qtd_parcelas
+FROM 
+    auxilio_emergencial
+GROUP BY 
+    ano_mes
+ORDER BY 
+    ano_mes;
+
+auxilio_por_mes_df = auxilio_emergencial.groupBy("ano_mes") \
+    .agg(F.count("parcela").alias("qtd_parcelas")) \
+    .orderBy("ano_mes")
+
+auxilio_por_mes_df.show(n=auxilio_por_mes_df.count(), truncate=False) 
+
+

@@ -1,28 +1,102 @@
-####Ingestao Dados Hive######
+### Projeto feito no google colab ###
+##Arquivo Projeto_Spark_2.ipynb
 
-1- Após a criação do database e das tabelas, foi a vez de inserir os dados dos arquivos csv armazenados no bucket
+#  Contextualização do problema
 
-2- Foi necessário mover os arquivos csv para o HDFS
+O dataset de vinho contém 178 amostras de vinho com 13 características físico-químicas, como a quantidade de álcool, acidez, entre outros, e uma classificação da qualidade em três categorias: 0, 1 ou 2.
 
-###Criacao do arquivo 
->hadoop fs -mkdir -p /user/hive/warehouse/projeto.db/auxilio_emergencial;
->hadoop fs -mkdir -p /user/hive/warehouse/projeto.db/municipio;
+Nosso objetivo é prever a qualidade do vinho utilizando essas 13 características, ou seja, é um problema de classificação multiclasse. Vamos começar com o modelo de Regressão Logística, que é adequado para tarefas de classificação.
 
-##Migrar o arquivo para o HDFS
->hadoop fs -copyFromLocal /home/yurigafeital/arquivos-curso/datasets/auxilio_emergencial_no_header.csv /user/hive/warehouse/projeto.db/auxilio_emergencial/
->hadoop fs -copyFromLocal /home/yurigafeital/arquivos-curso/datasets/municipio_no_header.csv /user/hive/warehouse/projeto.db/municipio/
+#  Carregando os dados e transformando em DataFrame
 
-3- Com os arquivos e tabelas em ordem, inseri os dados dos csvs nas tabelas
+!pip install pyspark
 
->beeline -u jdbc:hive2://localhost:10000/default -n yurigafeital@cluster-5472-m -d org.apache.hive.jdbc.HiveDriver;
->USE projeto;
->LOAD DATA INPATH '/user/hive/warehouse/projeto.db/auxilio_emergencial/auxilio_emergencial_no_header.csv' INTO TABLE auxilio_emergencial;
->LOAD DATA INPATH '/user/hive/warehouse/projeto.db/municipio/municipio_no_header.csv' INTO TABLE municipio;
+from sklearn.datasets import load_wine
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, abs as spark_abs
+from pyspark.ml.feature import VectorAssembler, StandardScaler
+from pyspark.ml.classification import LogisticRegression
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+import pandas as pd
 
-###describe utilizado no 02- PrimeirosPassos
->describe auxilio_emergencial;
->describe municipio;
+# Iniciar a sessão do Spark
+spark = SparkSession.builder.appName("WineDataset").getOrCreate()
 
-##Verificar os dados
->select * from auxilio_emergencial limit 10;
->select * from municipio limit 10;
+# Carregar o dataset Wine
+wine_data = load_wine()
+
+wine_df = pd.DataFrame(data=wine_data.data, columns=wine_data.feature_names)
+
+# Adicionar coluna Qualidade
+wine_df['quality'] = wine_data.target
+
+# Display the distinct values of the quality column
+wine_df.head()
+
+# Converter para um DataFrame do Spark
+spark_df = spark.createDataFrame(wine_df)
+
+# Verificar a estrutura dos dados
+print(spark.sparkContext.appName)
+spark_df.show(5)
+
+
+#  Tratamento dos dados
+
+center_stat = 'median'
+
+# Definir as colunas de características
+all_cols = ['alcohol', 'malic_acid', 'ash', 'alcalinity_of_ash']
+
+# Montar o vetor de características
+assembler = VectorAssembler(inputCols=all_cols, outputCol="features")
+
+# Aplicar o assembler ao DataFrame
+df_features = assembler.transform(spark_df)
+
+# Normalizar as características
+scaler = StandardScaler(inputCol="features", outputCol="scaledFeatures")
+scaler_model = scaler.fit(df_features)
+df_scaled = scaler_model.transform(df_features)
+
+# Selecionar apenas a coluna normalizada e a variável target (quality)
+final_df = df_scaled.select("scaledFeatures", "quality")
+final_df.show(5)
+
+
+#  Dividindo os dados em treino e teste
+
+# Divisão dos dados em 80% treino e 20% teste
+train_df, test_df = final_df.randomSplit([0.8, 0.2], seed=42)
+
+
+#  Treinando o modelo de Regressão Logística
+
+# Inicializando o modelo de regressão logística
+logreg = LogisticRegression(featuresCol="scaledFeatures", labelCol="quality")
+
+# Treinando o modelo
+logreg_model = logreg.fit(train_df)
+
+# Avaliando o modelo no conjunto de teste
+predictions = logreg_model.transform(test_df)
+
+# Avaliando a acurácia
+evaluator = MulticlassClassificationEvaluator(labelCol="quality", predictionCol="prediction", metricName="accuracy")
+accuracy = evaluator.evaluate(predictions)
+
+print(f"Acurácia no conjunto de teste (Regressão Logística): {accuracy:.2f}")
+
+
+#  Avaliação de Métricas e Matriz de Confusão
+
+# Gerar previsões no conjunto de teste
+predictions.select("quality", "prediction").show(10)
+
+# Calcular a matriz de confusão
+predictions.groupBy("quality", "prediction").count().show()
+
+#  Opções de Melhoria 
+
+Podemos optar pelo modelo de Random Forest que em sua maioria das vezes é superior, podemos optar por ele para capturar melhor as interações entre as variáveis. 
+No entanto, outras abordagens como ajuste de hiperparâmetros e diferentes métodos de validação cruzada podem ser testadas para otimizar ainda mais os resultados.

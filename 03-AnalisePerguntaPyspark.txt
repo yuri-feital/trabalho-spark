@@ -1,4 +1,5 @@
 ### Projeto feito no google colab ###
+##Arquivo Projeto_Spark_1.ipynb
 
 #Importando arquivo do Drive
 
@@ -30,13 +31,17 @@ print(spark.sparkContext.appName)
 # Carregar os dados
 
 municipio_df = spark.read.csv("POP2022_Municipios_20230622.csv",sep=';', header=True, inferSchema=True)
-auxilio_df = spark.read.csv("auxilio_emergencial.csv",sep=';', header=True, inferSchema=True)
-joined_df = auxilio_df.join(municipio_df, auxilio_df["uf"] == municipio_df["uf"])
+auxilio_df = spark.read.csv("auxilio_emergencial (1).csv",sep=',', header=True, inferSchema=True)
+
+municipio_df = municipio_df.withColumnRenamed("UF", "uf_municipio")
+
+joined_df = auxilio_df.join(municipio_df, auxilio_df["uf"] == municipio_df["uf_municipio"])
 
 # Verificar carregamento
 
 municipio_df.show(5)
 auxilio_df.show(5)
+joined_df.show(5)
 
 # Converter os DataFrames em RDDs 
 
@@ -58,6 +63,38 @@ auxilio_por_uf = auxilio_df.groupBy("uf").agg({"valor": "sum"}).withColumnRename
 auxilio_por_uf.show(n=auxilio_por_uf.count(), truncate=False)
 
 
++-----+---------------------+
+| uf  | total_auxilio       |
++-----+---------------------+
+| SP  | 31,680,576,000      |
+| BA  | 17,063,556,000      |
+| MG  | 16,283,049,000      |
+| RJ  | 14,829,374,400      |
+| PE  | 10,769,890,800      |
+| CE  | 10,221,785,400      |
+| PA  | 9,835,980,600       |
+| PR  | 7,898,199,000       |
+| RS  | 6,877,362,000       |
+| GO  | 5,828,848,200       |
+| PB  | 4,507,651,800       |
+| AM  | 4,473,289,200       |
+| SC  | 3,926,445,000       |
+| PI  | 3,919,412,400       |
+| AL  | 3,723,619,200       |
+| RN  | 3,678,657,000       |
+| ES  | 3,287,143,200       |
+| MS  | 2,207,940,600       |
+| MT  | 2,941,435,800       |
+| DF  | 1,944,685,800       |
+| TO  | 1,466,664,600       |
+| RO  | 1,563,641,400       |
+| AP  | 952,971,000         |
+| AC  | 931,648,200         |
+| RR  | 647,920,200         |
+| (sem estado) | 247,800    |
++-----+---------------------+
+
+
 2- Qual a total de população por UF? (UF x Qtd pessoa)
 
 
@@ -65,45 +102,74 @@ populacao_por_uf = municipio_df.groupBy("uf").agg({" POPULAÇÃO ": "sum"}).with
 
 populacao_por_uf.show(n=populacao_por_uf.count(), truncate=False)
 
-+---+------------------+
-|uf |total_pessoa      |
-+---+------------------+
-|SC |7762.1539999999995|
-|RO |1616.3790000000004|
-|PI |3270.173999999999 |
-|AM |1897.531          |
-|RR |634.805           |
-|GO |6462.566000000001 |
-|TO |1584.3060000000003|
-|MT |4781.240999999998 |
-|SP |32147.36100000001 |
-|PB |4030.9610000000016|
-|ES |3975.1            |
-|RS |9683.796          |
-|MS |2833.7419999999993|
-|AL |3125.2539999999995|
-|MG |19175.14599999998 |
-|PA |7075.626000000004 |
-|BA |12048.036000000006|
-|SE |2211.867999999999 |
-|PE |7556.527          |
-|CE |6340.273999999999 |
-|RN |3303.9530000000013|
-|RJ |9989.677          |
-|MA |5739.231000000001 |
-|AC |829.7800000000001 |
-|DF |NULL              |
-|PR |9963.589999999995 |
-|AP |774.268           |
-+---+------------------+
++-----+---------------------+
+| uf  | total_pessoa        |
++-----+---------------------+
+| SP  | 64,294.72           |
+| MG  | 38,350.29           |
+| RJ  | 19,979.35           |
+| PR  | 19,927.18           |
+| RS  | 19,367.59           |
+| SC  | 15,524.31           |
+| PE  | 15,113.05           |
+| PA  | 14,151.25           |
+| BA  | 24,096.07           |
+| GO  | 12,925.13           |
+| MA  | 11,478.46           |
+| MT  | 9,562.48            |
+| PB  | 8,061.92            |
+| ES  | 7,950.20            |
+| PI  | 6,540.35            |
+| AL  | 6,250.51            |
+| MS  | 5,667.48            |
+| AM  | 3,795.06            |
+| RO  | 3,232.76            |
+| SE  | 4,423.74            |
+| AP  | 1,548.54            |
+| RR  | 1,269.61            |
+| AC  | 1,659.56            |
+| TO  | 3,168.61            |
+| DF  | Não Disponível      |
++-----+---------------------+
 
 
 3- Valor médio do auxilio por pessoa em cada uf? (Valor total/Total poupulacao x Uf)
 
 
-medio_pessoa_uf = joined_df.groupBy("a.uf", "m.qtd_populacao") \ .agg((F.sum("a.valor") / F.col("m.qtd_populacao")).alias("valor_medio_por_pessoa"))
+medio_pessoa_uf = joined_df.groupBy("uf") \ .agg((F.sum("valor") / F.first(" POPULAÇÃO ")).alias("valor_medio_por_pessoa"))
 
 medio_pessoa_uf.show(n=medio_pessoa_uf.count(), truncate=False)
+
++----+----------------------------------------+ 
+| uf | valor_medio_por_pessoa                 |
++----+----------------------------------------+ 
+| SP | 490.16                                 | 
+| BA | 708.10                                 | 
+| MG | 424.71                                 | 
+| RJ | 742.16                                 | 
+| PE | 713.62                                 | 
+| CE | 642.16                                 | 
+| PA | 693.25                                 | 
+| PR | 396.93                                 | 
+| RS | 355.82                                 | 
+| GO | 451.35                                 | 
+| PB | 559.68                                 | 
+| AM | 1,179.21                               | 
+| SC | 252.41                                 | 
+| PI | 599.16                                 | 
+| AL | 595.63                                 | 
+| RN | 995.65                                 | 
+| ES | 413.82                                 | 
+| MS | 389.92                                 | 
+| MT | 307.63                                 | 
+| DF | Não Disponível                         | 
+| TO | 462.00                                 | 
+| RO | 483.51                                 | 
+| AP | 615.33                                 | 
+| AC | 561.62                                 | 
+| RR | 510.00                                 | 
+|    | 1.00                                   | 
++----+----------------------------------------+
 
 
 4- Quantidade de vezes recebido o auxilio por uf? (Parcela x Uf)
@@ -112,6 +178,37 @@ medio_pessoa_uf.show(n=medio_pessoa_uf.count(), truncate=False)
 qtd_auxilio_uf = auxilio_df.groupBy("uf") \ .agg(F.count("parcela").alias("total_parcelas"))
 
 qtd_auxilio_uf.show(n=qtd_auxilio_uf.count(), truncate=False)
+
++-----+-----------------+
+| uf  | total_parcelas  |
++-----+-----------------+
+| SP  | 45,184,584      |
+| BA  | 23,994,171      |
+| MG  | 23,620,710      |
+| RJ  | 20,686,146      |
+| PE  | 14,825,550      |
+| CE  | 14,458,281      |
+| PA  | 13,589,598      |
+| PR  | 11,506,424      |
+| RS  | 9,704,672       |
+| GO  | 8,230,217       |
+| AM  | 6,160,762       |
+| PB  | 6,357,635       |
+| SC  | 5,685,074       |
+| PI  | 5,548,834       |
+| AL  | 5,089,871       |
+| RN  | 5,188,229       |
+| MS  | 3,100,260       |
+| DF  | 2,720,472       |
+| TO  | 2,090,482       |
+| RO  | 2,227,151       |
+| SE  | 3,576,615       |
+| ES  | 4,758,966       |
+| MT  | 4,105,162       |
+| AC  | 1,324,312       |
+| AP  | 1,263,417       |
+| RR  | 896,235         |
++-----+-----------------+
 
 
 5- Quais os nomes que mais se repetem que receberam auxilio? (Qtd nome)
@@ -123,6 +220,21 @@ mes_repetido = auxilio_df.groupBy("beneficiario") \
     .limit(10)
 
 mes_repetido.show(n=mes_repetido.count(), truncate=False)
+
++-----------------------------+-----------+
+|        beneficiario         | qtd_nome  |
++-----------------------------+-----------+
+| MARIA JOSE DA SILVA         | 100491    |
+| MARIA APARECIDA DA SILVA    | 82937     |
+| MARIA DE FATIMA DA SILVA    | 40953     |
+| JOSE CARLOS DA SILVA        | 40647     |
+| MARIA JOSE DOS SANTOS       | 39836     |
+| MARIA APARECIDA DOS SANTOS  | 38596     |
+| ANA PAULA DA SILVA          | 33210     |
+| MARIA DE LOURDES DA SILVA   | 30200     |
+| JOSE CARLOS DOS SANTOS      | 25949     |
+| JOAO BATISTA DA SILVA       | 25671     |
++-----------------------------+-----------+
 
 
 # Perguntas Extras

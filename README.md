@@ -7,5 +7,6 @@ O passo a passo será explicado nesta sessão:
 03-AnalisePerguntaPyspark-> Scripts feitos em Pyspark no google colab, referentes ao projeto do haddop.
 Notebook Do colab no arquivo: Projeto_Spark_1.ipynb
 
-04-ModeloAprendizadoMaquina-> 
+04-ModeloAprendizadoMaquina-> Scripts feitos em Pyspark no google colab, para treinar um modelo de aprendizado de máquina.
+Notebook Do colab no arquivo: Projeto_Spark_2.ipynb
 
